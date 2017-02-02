@@ -196,5 +196,35 @@ func TestTagProcessorMetrics(t *testing.T) {
 			So(metrics_new[0].Tags_, ShouldResemble, emptyMap)
 			So(metrics, ShouldNotResemble, metrics_new)
 		})
+		Convey("Tag on some data", func() {
+			config := make(map[string]ctypes.ConfigValue)
+
+			config["source"] = ctypes.ConfigValueStr{Value: "test_file"}
+
+			for i := range metrics {
+				time.Sleep(3)
+				rand.Seed(time.Now().UTC().UnixNano())
+				data := randInt(65, 90)
+				metrics[i] = *plugin.NewMetricType(core.NewNamespace("foo", "bar"), time.Now(), nil, "", data)
+			}
+			So(metrics[0].Tags_, ShouldBeNil)
+			var buf bytes.Buffer
+			enc := gob.NewEncoder(&buf)
+			enc.Encode(metrics)
+			tagObj := NewTagProcessor()
+
+			_, received_data, _ := tagObj.Process("snap.gob", buf.Bytes(), config)
+
+			var metrics_new []plugin.MetricType
+
+			//Decodes the content into pluginMetricType
+			dec := gob.NewDecoder(bytes.NewBuffer(received_data))
+			dec.Decode(&metrics_new)
+			So(metrics_new[0].Tags_, ShouldNotBeNil)
+			emptyMap := map[string]string{"test": "test1", "test2": "test1"}
+			So(metrics_new[0].Tags_, ShouldResemble, emptyMap)
+			So(metrics, ShouldNotResemble, metrics_new)
+		})
+
 	})
 }

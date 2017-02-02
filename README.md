@@ -88,7 +88,9 @@ Create a task file. For example, psutil-tag-file.json:
         {
           "plugin_name": "tag",
           "config": {
-            "tags": "rack1:rack,datacenter:dublin,experiment:1"
+            "tags": "rack1:rack,datacenter:dublin,experiment:1",
+            "source": "/etc/snap/tags"
+
           },
           "publish": [
             {

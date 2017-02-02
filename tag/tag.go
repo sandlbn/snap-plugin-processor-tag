@@ -22,6 +22,7 @@ package tag
 import (
 	"bytes"
 	"encoding/gob"
+	"io/ioutil"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -58,6 +59,11 @@ func (p *TagProcessor) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	handleErr(err)
 	r1.Description = "Tags"
 	config.Add(r1)
+	r2, err := cpolicy.NewStringRule("source", true)
+	handleErr(err)
+	r2.Description = "Source"
+	config.Add(r1)
+
 	cp.Add([]string{""}, config)
 
 	return cp, nil
@@ -105,6 +111,24 @@ func (p *TagProcessor) Process(contentType string, content []byte, config map[st
 				}
 			}
 		}
+	}
+	if _, ok := config["source"]; ok {
+		source := config["source"].(ctypes.ConfigValueStr).Value
+		tags, err := ioutil.ReadFile(source)
+		if err != nil {
+			logger.Printf("Error opening of file: error=%v content=%v", err, content)
+		}
+		for i := range metrics {
+			tagMap := parseTags(string(tags))
+			if len(metrics[i].Tags_) == 0 {
+				metrics[i].Tags_ = tagMap
+			} else {
+				for k, v := range tagMap {
+					metrics[i].Tags_[k] = v
+				}
+			}
+		}
+
 	}
 
 	var buf bytes.Buffer
